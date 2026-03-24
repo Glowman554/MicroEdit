@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install clang
+      run: sudo apt update && sudo apt install -y clang llvm gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu
+
+
+    - name: Build linux (amd64)
+      run: make CC="clang --target=x86_64-pc-linux-gnu" PROGRAM=microedit.amd64 -B
+ 
+    - name: Build linux (arm64)
+      run: make CC="clang --target=aarch64-linux-gnu" PROGRAM=microedit.arm64 -B
+ 
+    - name: Build linux (riscv64)
+      run: make CC="clang --target=riscv64-linux-gnu" PROGRAM=microedit.riscv64 -B
+ 
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: compiler
+        path: |
+          microedit.*
