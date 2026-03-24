@@ -119,6 +119,7 @@ int main(int argc, char* argv[], char* envp[]) {
 	state.is_in_insert_mode = true;
 	state.read_only = read_only;
 	state.needs_render = true;
+	state.show_tab_char = false;
 
 	state.file = fopen(file_name, "r");
 	if (state.file == NULL) {

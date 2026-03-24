@@ -143,6 +143,11 @@ bool listen_input(edit_state_t* state) {
 					move_down(state);
 					state->needs_render = true;
 					break;
+				
+				case 't':
+					state->show_tab_char = !state->show_tab_char;
+					state->needs_render = true;
+					break;
 
 				case '+':
 					state->file = freopen(state->file_name, "w", state->file);

@@ -6,6 +6,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#define TAB_WIDTH 4
+
 syntax_header_t* syntax = NULL;
 
 void start_frame() {
@@ -58,6 +60,13 @@ void rerender_color(edit_state_t* state) {
 		}
 		color = highlight(state->input_buffer, state->current_size, syntax);
 	}
+}
+
+void draw_line_number(int cur_y, int current_line) {
+	char buff[16] = { 0 };
+	memset(buff, 0, sizeof(buff));
+	sprintf(buff, "%d.", current_line);
+	draw_string(0, cur_y, buff, "\x1b[34m");
 }
 
 void render_tui(edit_state_t* state) {
@@ -117,10 +126,7 @@ void render_tui(edit_state_t* state) {
 		if ((j >= start_line && j < start_line + viewport_height) && already_drawn <= viewport_height) {
 			if (!initial_line_drawn) {
 				initial_line_drawn = true;
-				memset(buff, 0, 512);
-				sprintf(buff, "%d.", current_line);
-                // light gray
-				draw_string(0, cur_y, buff, "\x1b[34m");
+				draw_line_number(cur_y, current_line);
 			}
 
 			if (cur_x >= width) {
@@ -135,6 +141,24 @@ void render_tui(edit_state_t* state) {
 				cursor_drawn = true;
 			}
 
+			if (state->input_buffer[i] == '\t') {
+				int col = cur_x - space_to_draw;
+				int next_tab_stop = ((col / TAB_WIDTH) + 1) * TAB_WIDTH;
+				int spaces = next_tab_stop - col;
+				
+				for (int s = 0; s < spaces; s++) {
+					if (cur_x >= width) {
+						cur_y++;
+						cur_x = space_to_draw;
+						already_drawn++;
+						draw_line_number(cur_y, current_line);
+					}
+					draw_char(cur_x, cur_y, state->show_tab_char ? '.' : ' ', "\x1b[37m");
+					cur_x++;
+				}
+				cur_x--;
+			}
+
 			if (state->input_buffer[i] >= 0x20 && state->input_buffer[i] <= 0x7E) {
 				draw_char(cur_x, cur_y, state->input_buffer[i], (color ? color_translation[color[i]] : "\x1b[37m"));
 			}
@@ -147,9 +171,7 @@ void render_tui(edit_state_t* state) {
 				j++;
 				cur_x = space_to_draw;
 				cur_y++;
-				memset(buff, 0, 512);
-				sprintf(buff, "%d.", current_line);
-				draw_string(0, cur_y, buff, "\x1b[34m");
+				draw_line_number(cur_y, current_line);
 			}
 		} else {
 			if (state->input_buffer[i] == '\n') {
@@ -160,6 +182,7 @@ void render_tui(edit_state_t* state) {
 
 	if (!cursor_drawn) {
 		if (!initial_line_drawn) {
+			memset(buff, 0, 512);
 			sprintf(buff, "%d.", current_line);
 			draw_string(0, cur_y, buff, "\x1b[30m");
 		}
